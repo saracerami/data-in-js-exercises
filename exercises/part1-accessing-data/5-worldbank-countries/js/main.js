@@ -19,6 +19,8 @@ INSTRUCTIONS
 4.  Optional: Add error handling for API failures and loading states.
 
 */
+const worldBank_URL = 'http://api.worldbank.org/v2/country?format=json';
+const worldBankEAS_URL = 'http://api.worldbank.org/v2/region/EAS/country?format=json';
 
 import { htmlToElement } from './html-utils.js';
 
@@ -56,6 +58,9 @@ let shownCountries = 0;
  * @returns {Promise<CountriesPageInfo>} Object containing countries array and pagination metadata
  */
 async function getCountriesData(regionCode = '', page = 1) {
+    const worldbankData = await fetch (worldBank_URL);
+    return worldbankData;
+
   // ABOUT THE API:
   //
   // The World Bank Indicators API, like many APIs, uses "pagination" to limit
@@ -101,6 +106,7 @@ async function getCountriesData(regionCode = '', page = 1) {
  * @returns {HTMLElement} The created list item element
  */
 function createCountryListItem(country) {
+
   // ... Your code here ...
 }
 

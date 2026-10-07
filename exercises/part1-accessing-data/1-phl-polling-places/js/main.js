@@ -15,7 +15,7 @@ INSTRUCTIONS
 */
 
 /* globals L */
-
+const POLLING_PLACES_URL = 'https://phl.carto.com/api/v2/sql?q=SELECT+*+FROM+polling_places&filename=polling_places&format=geojson&skipfields=cartodb_id';
 /**
  * Creates a polling places Leaflet map object.
  * @param {string|HTMLElement} elementOrId The DOM element where the map will live
@@ -34,9 +34,28 @@ function initPollingPlaceMap(elementOrId) {
  * Fetches the polling place data from OpenDataPhilly.
  * @returns {Promise<GeoJSON.FeatureCollection>} The polling place data.
  */
-async function getPollingPlaceData() {
-  // ... Your code here ...
+async function getPollingPlaceData() {  
+const pollingPlaces = await fetch(POLLING_PLACES_URL);
+return pollingPlaces;
 }
+
+async function showPollingPlaces() {
+  const pollingPlaces = await getPollingPlaceData();
+
+console.log(pollingPlaces);
+
+L.geoJSON(pollingPlaces, {
+  pointToLayer: (feature, latLng) => {
+  return L.marker(latlng);
+  },
+onEachFeature: (feature, layer) => {
+  layer.bindPopup(feature.properties.placename);
+    },
+  }).addTo(map);
+}
+
+showPollingPlaces();
+
 
 /**
  * Creates a Leaflet GeoJSON layer for polling places and adds it to the map.
@@ -44,11 +63,11 @@ async function getPollingPlaceData() {
  * @returns {Promise<L.GeoJSON>} The constructed Leaflet GeoJSON layer.
  */
 async function initPollingPlaceLayer(map) {
-  const pollingPlaceData = await getPollingPlaceData();
+  const pollingPlaces = await getPollingPlaceData();
 
   // Create a custom icon for polling places.
   const icon = L.icon({
-    iconUrl: 'img/polling-place-marker.png',
+    iconUrl: 'map-marker.png',
     iconSize: [30, 36],
     iconAnchor: [15, 36],
     popupAnchor: [0, -36],
@@ -64,8 +83,13 @@ async function initPollingPlaceLayer(map) {
       return L.marker(latlng, { icon: icon });
     },
     onEachFeature: (feature, layer) => {
-      layer.bindPopup(`...`);
-    },
+      const placeName = feature.properties.placename; 
+      const address = feature.properties.street_address; 
+      
+      layer.bindPopup(`
+        <strong>${placeName}</strong><br>${address}
+        `);
+    }
   }).addTo(map);
 
   return layer;

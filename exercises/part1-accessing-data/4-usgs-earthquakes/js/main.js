@@ -18,8 +18,10 @@ INSTRUCTIONS
     earthquake depth or age.
 
 */
+import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
 
 /* globals L */
+const USGS_URL = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson';
 
 /**
  * Creates an earthquake map Leaflet map object centered on the world.
@@ -31,7 +33,6 @@ function initEarthquakeMap(elementOrId) {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
-
   return map;
 }
 
@@ -40,7 +41,8 @@ function initEarthquakeMap(elementOrId) {
  * @returns {Promise<GeoJSON.FeatureCollection>} The earthquake data.
  */
 async function getEarthquakeData() {
-  // ... Your code here ...
+  const earthquakeData = await d3.json(USGS_URL);
+  return earthquakeData;
 }
 
 /**
@@ -51,8 +53,8 @@ async function getEarthquakeData() {
 function getRadiusFromMagnitude(magnitude) {
   // Scale magnitude to reasonable pixel radius
   // Magnitude typically ranges from 0-10; re-scale to 2-50 pixels
-
-  return; // ... Your code here ...;
+  if (!Number.isFinite(magnitude)) return 2;
+  return Math.max(2, Math.min( 50, 2 + magnitude * 4.8));
 }
 
 /**
@@ -65,7 +67,8 @@ function getColorFromDepth(depth) {
   // Intermediate earthquakes (70-300km) are orange
   // Deep earthquakes (> 300km) are yellow
   if (depth < 70) return '#ff4444';
-  if (depth < 300) return '#ff8844';
+  if (depth < 70 > 300) return '#ffbb33';
+  if (depth < 300) return '#f8ef78';
   return '#ffaa44';
 }
 
@@ -80,10 +83,19 @@ async function initEarthquakeLayer(map) {
   // Create a GeoJSON layer with the earthquake data
   const layer = L.geoJSON(earthquakeData, {
     pointToLayer: (feature, latlng) => {
-      // ... Your code here ...
+      const magnitude = feature.properties.mag;
+      const depth = feature.geometry.coordinates[2];
+      return L.circleMarker(latlng, {
+        radius: getRadiusFromMagnitude(magnitude),
+        color: getColorFromDepth(depth),
+        fillColor: getColorFromDepth(depth),
+        fillOpacity: 0.7,
+      });
     },
     onEachFeature: (feature, layer) => {
-      // layer.bindPopup(`... Your code here ...`);
+      const popup = document.createElement('span');
+      popup.textContent = feature.properties.title;
+      layer.bindPopup(popup);
     },
   }).addTo(map);
 

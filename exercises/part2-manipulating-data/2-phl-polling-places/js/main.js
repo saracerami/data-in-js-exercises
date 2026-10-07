@@ -18,6 +18,7 @@ INSTRUCTIONS
 import 'leaflet';
 
 /* globals L */
+const POLLING_PLACES_URL = 'https://phl.carto.com/api/v2/sql?q=SELECT+*+FROM+polling_places&filename=polling_places&format=geojson&skipfields=cartodb_id';
 
 /**
  * Creates a polling places Leaflet map object.
@@ -39,7 +40,11 @@ function initPollingPlaceMap(elementOrId) {
  * @returns {Promise<GeoJSON.FeatureCollection>} The deduplicated polling place data.
  */
 async function getPollingPlaceData() {
-  // ... Your code here ...
+  const response = await fetch('https://phl.carto.com/api/v2/sql?q=SELECT+*+FROM+polling_places&filename=polling_places&format=geojson&skipfields=cartodb_id');
+  if (!response.ok) {
+    throw new Error(`Failed to fetch polling places: ${response.status}`);
+  }
+  return await response.json();
 }
 
 /**
@@ -49,26 +54,32 @@ async function getPollingPlaceData() {
  */
 async function initPollingPlaceLayer(map) {
   const pollingPlaceData = await getPollingPlaceData();
+  window.getPollingPlaceData = pollingPlaceData;
 
-  // Create a custom icon for polling places.
-  const icon = L.icon({
-    iconUrl: 'img/polling-place-marker.png',
-    iconSize: [30, 36],
-    iconAnchor: [15, 36],
-    popupAnchor: [0, -36],
-    shadowUrl: 'img/polling-place-marker-shadow.png',
-    shadowSize: [40, 48],
-    shadowAnchor: [20, 48],
-  });
+const icon = L.icon({
+  iconUrl: 'img/polling-place-marker.png',
+  iconSize: [30, 36],
+  iconAnchor: [15, 36],
+  popupAnchor: [0, -36],
+  shadowUrl: 'img/polling-place-marker-shadow.png',
+  shadowSize: [40, 48],
+  shadowAnchor: [20, 48],
+});
 
-  // Create a GeoJSON layer with the polling place data. Override the default
-  // pointToLayer function to construct markers with the custom icon.
+
+
   const layer = L.geoJSON(pollingPlaceData, {
-    pointToLayer: function (feature, latlng) {
+    pointToLayer: (feature, latlng) => {
       return L.marker(latlng, { icon: icon });
     },
     onEachFeature: function (feature, layer) {
-      layer.bindPopup(`...`);
+      layer.bindPopup(`
+        <div>
+        <p>${feature.properties.placename}</p>
+        <p>${feature.properties.street_address}</p>
+        <p>Precincts: ${feature.properties.precincts ? feature.properties.precincts.join(', ') : 'None'}</p>
+        </div>
+      `);
     },
   }).addTo(map);
 
@@ -77,3 +88,25 @@ async function initPollingPlaceLayer(map) {
 
 window.pollingPlaceMap = initPollingPlaceMap('map');
 window.pollingPlaceLayer = await initPollingPlaceLayer(window.pollingPlaceMap);
+
+function handleGeolocationSuccess(pos) {
+  console.log(pos);
+  window.pollingPlaceMap.flyTo([pos.coords.latitude, pos.coords.longitude], 18);
+
+}
+
+function handleGeolocationError(err) {
+  console.error(err);
+}
+
+const locateBtn = document.querySelector('#findNearestPollingPlaceBtn');
+locateBtn.addEventListener('click', () => {
+  navigator.geolocation.getCurrentPosition((pos) => {
+    console.log(pos);
+    pollingPlaceMap.flyTo([pos.coords.latitude, pos.coords.longitude], 18);
+  }, (err) => {
+    console.error(err);
+  });
+});
+
+

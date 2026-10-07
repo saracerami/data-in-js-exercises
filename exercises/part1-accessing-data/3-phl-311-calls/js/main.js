@@ -51,7 +51,7 @@ const API_URL
   = 'https://phl.carto.com/api/v2/sql?filename=public_cases_fc&format=csv&skipfields=cartodb_id,the_geom,the_geom_webmercator&q=SELECT * FROM public_cases_fc ORDER BY requested_datetime DESC LIMIT 100';
 
 // Get references to DOM elements
-const loadingElement = document.getElementById('loading');
+const loadingElement = document.getElementById('loading'); // 
 const dataInfoElement = document.getElementById('data-info');
 const callCountElement = document.getElementById('call-count');
 const callsListElement = document.getElementById('calls-list');
@@ -60,11 +60,14 @@ const callsListElement = document.getElementById('calls-list');
  * Fetch and parse the CSV data from the API using D3
  * @returns {Array} Array of call objects
  */
-async function fetchCallsData() {
-  // ... Your code here ...
-}
 
-/**
+  async function fetchCallsData() {   //async function creates a promise called fetchCallsData
+  const data = await d3.csv(API_URL);  //const assigns the resolved value of the promise to data
+  window.calls = data; // window.calls means that data is stored in the global window object. Can go to the browser's developer console to see it
+    return data; 
+  }
+
+/** 
  * Format a date string to be more readable
  * @param {string} dateString - The date string from the API
  * @returns {string} Formatted date string
@@ -102,8 +105,20 @@ function getStatusClass(status) {
  * @param {Object} call - The call data object
  * @returns {HTMLElement} The created list item element
  */
-function createCallListItem(call) {
-  // ... Your code here ...
+function createCallListItem(call) { //makes a function called createCallListItem
+      const title = call.title; //const assigns the value of call.title to title
+      const status = call.status; //const assigns the value of call.status to status
+      const address = call.address; //const assigns the value of call.address to address
+      const requestDate = new Date(call.requested_datetime); //const assigns the value of call.requested_datetime to requestDate
+      const statusClass = getStatusClass(status); //const assigns the value of getStatusClass(status) to statusClass
+      const html = ` 
+      <li class="call-item">
+        <span class="class-address">${address}</span>
+        <span class="call-status ${statusClass}">${status}</span>
+        </li>
+      `;
+      const listItem = htmlToElement(html);
+      return listItem;
 }
 
 /**
@@ -131,7 +146,7 @@ function displayCalls(calls) {
 /**
  * Fetch and display 311 calls data using D3
  */
-async function load311CallsData() {
+async function load311CallsData() { 
   try {
     console.log('Fetching 311 calls data with D3...');
     const calls = await fetchCallsData();
@@ -146,3 +161,6 @@ async function load311CallsData() {
 
 // Load the data when the page loads
 document.addEventListener('DOMContentLoaded', load311CallsData);
+
+
+
